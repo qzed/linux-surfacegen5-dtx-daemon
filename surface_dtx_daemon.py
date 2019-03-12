@@ -94,7 +94,7 @@ def _dtx_event_from_bytes(type, code, arg0, arg1):
 
 
 class DtxDevice:
-    _NATIVE_EVENT_BUF_SIZE = 16 * 2
+    _NATIVE_EVENT_BUF_SIZE = 16 * 4
 
     @staticmethod
     def open(path='/dev/surface_dtx', oflags=os.O_RDWR | os.O_NONBLOCK):
