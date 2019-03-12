@@ -131,7 +131,7 @@ class DtxDevice:
 
 class EventHandler:
     def __call__(self, dev, evt):
-        print("received event: {}".format(repr(evt)))
+        print("received event: {}".format(evt))
 
         if isinstance(evt, ConnectionChangeEvent):
             pass    # TODO
