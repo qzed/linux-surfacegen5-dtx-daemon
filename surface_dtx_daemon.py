@@ -17,6 +17,8 @@ class DtxCommand:
         return self.type == other.type and self.code == other.code
 
 
+DtxCommand.BaseSafeguardEngage = DtxCommand(0x11, 0x06)
+DtxCommand.BaseSafeguardDisengage = DtxCommand(0x11, 0x07)
 DtxCommand.BaseDetachAbort = DtxCommand(0x11, 0x08)
 DtxCommand.BaseDetachCommence = DtxCommand(0x11, 0x09)
 
