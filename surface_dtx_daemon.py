@@ -22,15 +22,74 @@ DtxCommand.BaseDetachCommence = DtxCommand(0x11, 0x09)
 
 
 class DtxEvent:
-    def __init__(self, type, code):
+    def __init__(self, type, code, arg0=0x00, arg1=0x00):
         self.type = type
         self.code = code
+        self.arg0 = arg0
+        self.arg1 = arg1
 
     def __eq__(self, other):
         return self.type == other.type and self.code == other.code
 
+    def __repr__(self):
+        return "DtxEvent (type: 0x{:02x}, code: 0x{:02x}, arg0: 0x{:02x}, arg1: 0x{:02x})" \
+                .format(self.type, self.code, self.arg0, self.arg1)
 
-DtxEvent.BaseDetachRequest = DtxEvent(0x11, 0x0e)
+
+class ConnectionChangeEvent(DtxEvent):
+    def __init__(self, state, arg1):
+        super().__init__(0x11, 0x0c, state, arg1)
+
+    def __str__(self):
+        return "ConnectionChangeEvent (state: {})" \
+                .format("Connected" if self.state() else "Disconnected")
+
+    def state(self):
+        return self.arg0 == 0x01
+
+
+class DetachButtonEvent(DtxEvent):
+    def __init__(self):
+        super().__init__(0x11, 0x0e)
+
+    def __str__(self):
+        return "DetachButtonEvent"
+
+
+class DetachTimeoutEvent(DtxEvent):
+    def __init__(self, arg0):
+        super().__init__(0x11, 0x0f, arg0)
+
+    def __str__(self):
+        return "DetachTimeoutEvent (arg0: {})".format(self.arg0)
+
+
+class DetachNotificationEvent(DtxEvent):
+    def __init__(self, state):
+        super().__init__(0x11, 0x11, state)
+
+    def state(self):
+        return self.arg0 == 0x01
+
+    def __str__(self):
+        return "DetachNotificationEvent (state: {})" \
+                .format("On" if self.state() else "Off")
+
+
+def _dtx_event_from_bytes(type, code, arg0, arg1):
+    if type == 0x11 and code == 0x0c:
+        return ConnectionChangeEvent(arg0, arg1)
+
+    if type == 0x11 and code == 0x0e:
+        return DetachButtonEvent()
+
+    if type == 0x11 and code == 0x0f:
+        return DetachTimeoutEvent(arg0)
+
+    if type == 0x11 and code == 0x11:
+        return DetachNotificationEvent(arg0)
+
+    return DtxEvent(type, code, arg0, arg1)
 
 
 class DtxDevice:
@@ -58,8 +117,8 @@ class DtxDevice:
     def read(self):
         data = os.read(self.fd, DtxDevice._NATIVE_EVENT_BUF_SIZE)
 
-        for event in struct.iter_unpack('BB', data):
-            yield DtxEvent(*event)
+        for event in struct.iter_unpack('BBBB', data):
+            yield _dtx_event_from_bytes(*event)
 
     def read_loop(self):
         while True:
@@ -71,21 +130,32 @@ class DtxDevice:
         os.write(self.fd, bytes([cmd.type, cmd.code]))
 
 
-def handle_detach_event(dev, evt):
-    dev.write(DtxCommand.BaseDetachCommence)    # TODO
+class EventHandler:
+    def __call__(self, dev, evt):
+        print("received event: {}".format(repr(evt)))
 
+        if isinstance(evt, ConnectionChangeEvent):
+            pass    # TODO
 
-def handle_event(dev, evt):
-    if evt == DtxEvent.BaseDetachRequest:
-        handle_detach_event(dev, evt)
-    else:
-        print('WARNING: unknown request: 0x{:02x}'.format(evt.code))
+        elif isinstance(evt, DetachButtonEvent):
+            dev.write(DtxCommand.BaseDetachCommence)    # TODO
+
+        elif isinstance(evt, DetachTimeoutEvent):
+            pass    # TODO
+
+        elif isinstance(evt, DetachNotificationEvent):
+            pass    # TODO
+
+        else:
+            print('WARNING: unhandled event: {}'.format(evt))
 
 
 def main():
+    handler = EventHandler()
+
     with DtxDevice.open() as dev:
         for evt in dev.read_loop():
-            handle_event(dev, evt)
+            handler(dev, evt)
 
 
 if __name__ == '__main__':
