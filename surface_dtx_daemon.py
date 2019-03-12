@@ -68,12 +68,11 @@ class DetachNotificationEvent(DtxEvent):
     def __init__(self, state):
         super().__init__(0x11, 0x11, state)
 
-    def state(self):
+    def show(self):
         return self.arg0 == 0x01
 
     def __str__(self):
-        return "DetachNotificationEvent (state: {})" \
-                .format("On" if self.state() else "Off")
+        return "DetachNotificationEvent (show: {})".format(self.show())
 
 
 def _dtx_event_from_bytes(type, code, arg0, arg1):
