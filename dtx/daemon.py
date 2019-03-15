@@ -1,6 +1,5 @@
-#!/usr/bin/env python3
-import dtx
-import notify
+from . import dtx
+from . import notify
 
 
 class EventHandler:
@@ -51,13 +50,9 @@ class EventHandler:
             self.notif.close()
 
 
-def main():
+def run():
     handler = EventHandler()
 
     with dtx.Device.open() as dev:
         for evt in dev.read_loop():
             handler(dev, evt)
-
-
-if __name__ == '__main__':
-    main()
