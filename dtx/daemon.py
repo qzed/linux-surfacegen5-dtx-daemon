@@ -4,36 +4,46 @@ from . import notify
 
 class EventHandler:
     def __init__(self):
+        self.in_progress = False
         self.notif = None
 
     def __call__(self, dev, evt):
-        print("received event: {}".format(evt))
-
         if isinstance(evt, dtx.ConnectionChangeEvent):
-            self.event_connection_change(dev, evt)
+            self.in_progress = False
+            self.on_connection_change(dev, evt)
 
         elif isinstance(evt, dtx.DetachButtonEvent):
-            self.event_detach_button(dev, evt)
+            if self.in_progress:
+                self.on_detach_abort(dev, evt)
+                self.in_progress = False
+            else:
+                self.in_progress = True
+                self.on_detach_initiate(dev, evt)
 
         elif isinstance(evt, dtx.DetachTimeoutEvent):
-            self.event_detach_timeout(dev, evt)
+            self.on_detach_abort(dev, evt)
+            self.in_progress = False
 
         elif isinstance(evt, dtx.DetachNotificationEvent):
-            self.event_notify(dev, evt)
+            self.on_notify(dev, evt)
 
         else:
             print('WARNING: unhandled event: {}'.format(evt))
 
-    def event_connection_change(self, dev, evt):
-        pass
+    def on_connection_change(self, dev, evt):
+        if evt.state():
+            print("DEBUG: base connected")
+        else:
+            print("DEBUG: base disconnected")
 
-    def event_detach_button(self, dev, evt):
+    def on_detach_initiate(self, dev, evt):
+        print("DEBUG: detachment process: initiating")
         dev.write(dtx.Command.BaseDetachCommence)
 
-    def event_detach_timeout(self, dev, evt):
-        pass
+    def on_detach_abort(self, dev, evt):
+        print("DEBUG: detachment process: aborting")
 
-    def event_notify(self, dev, evt):
+    def on_notify(self, dev, evt):
         if evt.show():
             notif = notify.SystemNotification('Surface DTX')
             notif.summary = 'Surface DTX'
