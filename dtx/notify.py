@@ -1,8 +1,15 @@
+"""
+dBus System Notifications.
+
+Allows processes running as root to send notifications to all users.
+"""
+
 import os
 import dbus
 
 
 def get_user_paths(bus, clss='user'):
+    """Get all dBus `User` object paths of class `clss`."""
     user_paths = set()
 
     logind = bus.get_object('org.freedesktop.login1', '/org/freedesktop/login1')
@@ -22,6 +29,7 @@ def get_user_paths(bus, clss='user'):
 
 
 def get_user_runtime_paths(bus=dbus.SystemBus()):
+    """Get dBus user runtime paths of all active "human" users."""
     for user_path in get_user_paths(bus):
         user = bus.get_object('org.freedesktop.login1', user_path)
         user_p = dbus.Interface(user, 'org.freedesktop.DBus.Properties')
@@ -32,6 +40,7 @@ def get_user_runtime_paths(bus=dbus.SystemBus()):
 
 
 def _notify_all_show(n):
+    """Show notification to all active "human" users."""
     ids = dict()
 
     for uid, path in get_user_runtime_paths():
@@ -54,6 +63,7 @@ def _notify_all_show(n):
 
 
 def _notify_all_close(n):
+    """Close the notification on all sessions it is active."""
     for uid, path in get_user_runtime_paths():
         if uid not in n.ids:
             continue
@@ -72,7 +82,10 @@ def _notify_all_close(n):
 
 
 class SystemNotification:
+    """A notification that can be sent to all users."""
+
     def __init__(self, app_name, summary="", body="", replaces_id=0, timeout=-1, app_icon=''):
+        """Create a new notification."""
         self.app_name = app_name
         self.app_icon = app_icon
         self.summary = summary
@@ -83,13 +96,17 @@ class SystemNotification:
         self.actions = list()
 
     def show(self):
+        """Show this notification to all "human" users."""
         return _notify_all_show(self)
 
 
 class ActiveSystemNotification:
+    """A SystemNotification that has already been sent and is active."""
+
     def __init__(self, notif, ids):
         self.notif = notif
         self.ids = ids
 
     def close(self):
+        """Close this notification on all session it is active."""
         _notify_all_close(self)
