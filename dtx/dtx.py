@@ -2,21 +2,7 @@ import os
 import select
 import subprocess
 import struct
-
-
-class Command:
-    def __init__(self, type, code):
-        self.type = type
-        self.code = code
-
-    def __eq__(self, other):
-        return self.type == other.type and self.code == other.code
-
-
-Command.BaseSafeguardEngage = Command(0x11, 0x06)
-Command.BaseSafeguardDisengage = Command(0x11, 0x07)
-Command.BaseDetachAbort = Command(0x11, 0x08)
-Command.BaseDetachCommence = Command(0x11, 0x09)
+import fcntl
 
 
 class Event:
@@ -123,5 +109,5 @@ class Device:
             for event in self.read():
                 yield event
 
-    def write(self, cmd):
-        os.write(self.fd, bytes([cmd.type, cmd.code]))
+    def ioctl(self, request, arg=0):
+        return fcntl.ioctl(self.fd, request, arg)

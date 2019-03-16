@@ -1,5 +1,23 @@
 from . import dtx
 from . import notify
+from . import commands
+
+import time
+
+
+def _get_op_mode_str(dev):
+    opmode = commands.get_op_mode(dev)
+
+    if opmode == commands.OP_MODE_LAPTOP:
+        return "Laptop"
+
+    if opmode == commands.OP_MODE_TABLET:
+        return "Tablet"
+
+    if opmode == commands.OP_MODE_SLATE:
+        return "Slate"
+
+    return "<unknown>"
 
 
 class EventHandler:
@@ -35,16 +53,19 @@ class EventHandler:
 
     def on_detach_initiate(self, dev, evt):
         print("DEBUG: detachment process: initiating")
-        dev.write(dtx.Command.BaseDetachCommence)
+        commands.detach_commence(dev)
 
     def on_detach_abort(self, dev, evt):
         print("DEBUG: detachment process: aborting")
 
     def on_connect(self, dev, evt):
         print("DEBUG: base connected")
+        time.sleep(5)
+        print("DBEUG: device mode changed to '{}'".format(_get_op_mode_str(dev)))
 
     def on_disconnect(self, dev, evt):
         print("DEBUG: base disconnected")
+        print("DBEUG: device mode changed to '{}'".format(_get_op_mode_str(dev)))
 
     def on_notify(self, dev, evt):
         if evt.show():
