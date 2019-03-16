@@ -9,8 +9,11 @@ class EventHandler:
 
     def __call__(self, dev, evt):
         if isinstance(evt, dtx.ConnectionChangeEvent):
-            self.in_progress = False
-            self.on_connection_change(dev, evt)
+            if evt.state():
+                self.on_connect(dev, evt)
+            else:
+                self.in_progress = False
+                self.on_disconnect(dev, evt)
 
         elif isinstance(evt, dtx.DetachButtonEvent):
             if self.in_progress:
@@ -30,18 +33,18 @@ class EventHandler:
         else:
             print('WARNING: unhandled event: {}'.format(evt))
 
-    def on_connection_change(self, dev, evt):
-        if evt.state():
-            print("DEBUG: base connected")
-        else:
-            print("DEBUG: base disconnected")
-
     def on_detach_initiate(self, dev, evt):
         print("DEBUG: detachment process: initiating")
         dev.write(dtx.Command.BaseDetachCommence)
 
     def on_detach_abort(self, dev, evt):
         print("DEBUG: detachment process: aborting")
+
+    def on_connect(self, dev, evt):
+        print("DEBUG: base connected")
+
+    def on_disconnect(self, dev, evt):
+        print("DEBUG: base disconnected")
 
     def on_notify(self, dev, evt):
         if evt.show():
