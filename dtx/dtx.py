@@ -17,7 +17,7 @@ class Event:
 
     def __repr__(self):
         return "DtxEvent (type: 0x{:02x}, code: 0x{:02x}, arg0: 0x{:02x}, arg1: 0x{:02x})" \
-                .format(self.type, self.code, self.arg0, self.arg1)
+               .format(self.type, self.code, self.arg0, self.arg1)
 
 
 class ConnectionChangeEvent(Event):
@@ -26,7 +26,7 @@ class ConnectionChangeEvent(Event):
 
     def __str__(self):
         return "ConnectionChangeEvent (state: {})" \
-                .format("Connected" if self.state() else "Disconnected")
+               .format("Connected" if self.state() else "Disconnected")
 
     def state(self):
         return self.arg0 == 0x01
