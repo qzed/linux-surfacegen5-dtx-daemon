@@ -4,8 +4,8 @@ dBus System Notifications.
 Allows processes running as root to send notifications to all users.
 """
 
-import os
 import dbus
+import os
 
 
 def get_user_paths(bus, clss='user'):

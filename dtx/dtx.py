@@ -1,8 +1,8 @@
+import fcntl
 import os
 import select
-import subprocess
 import struct
-import fcntl
+import subprocess
 
 
 class Event:

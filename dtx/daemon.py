@@ -1,11 +1,12 @@
-from . import dtx
-from . import notify
 from . import commands as cmd
 from . import config
+from . import dtx
+from . import notify
 
+import argparse
 import asyncio
-import signal
 import logging
+import signal
 
 
 async def _delayed(t, fn, *args):

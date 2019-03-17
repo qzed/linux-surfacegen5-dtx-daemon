@@ -1,5 +1,5 @@
-import toml
 import logging
+import toml
 
 
 def _flatten_dict_tuples(d, base=()):
