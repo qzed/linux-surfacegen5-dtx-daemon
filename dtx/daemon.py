@@ -22,8 +22,10 @@ class EventHandler:
     def __init__(self):
         self.log = logging.getLogger("handler")
         self.detach_in_progress = False
-        self.task_init_scheduled = 0
+        self.task_detach_scheduled = 0
         self.task_abort_scheduled = 0
+        self.task_attach_scheduled = 0
+        self.skip_next_abort = False
         self.notif = None
 
     def __call__(self, dev, evt, queue):
@@ -55,17 +57,28 @@ class EventHandler:
             self.log.warning('unhandled event: {}'.format(evt))
 
     def on_detach_init(self, dev, evt, queue):
+        if self.task_attach_scheduled:
+            self.skip_next_abort = True
+            cmd.detach_abort(dev)
+            return
+
         self.log.debug("detachment process: initiating")
-        self.task_init_scheduled += 1
-        queue.put_nowait(self.detach_init_task(dev, evt))
+        self.task_detach_scheduled += 1
+        queue.put_nowait(self.task_detach(dev, evt))
 
     def on_detach_abort(self, dev, evt, queue):
+        if self.skip_next_abort:
+            self.skip_next_abort = False
+            return
+
         self.log.debug("detachment process: aborting")
         self.task_abort_scheduled += 1
-        queue.put_nowait(self.detach_abort_task(dev, evt))
+        queue.put_nowait(self.task_detach_abort(dev, evt))
 
     def on_connect(self, dev, evt, queue):
         self.log.debug("base connected")
+        self.task_attach_scheduled += 1
+        queue.put_nowait(self.task_attach(dev, evt))
 
     def on_connect_delayed(self, dev, evt, queue):
         self.log.debug("device mode changed to '{}'".format(cmd.op_mode_str(cmd.get_op_mode(dev))))
@@ -90,24 +103,33 @@ class EventHandler:
         elif self.notif is not None:
             self.notif.close()
 
-    async def detach_init_task(self, dev, evt):
-        self.log.debug("detachment task: init")
+    async def task_detach(self, dev, evt):
+        self.log.debug("task: detach start")
 
         await asyncio.sleep(5)          # TODO: implement real process execution
 
         if not self.task_abort_scheduled:
             cmd.detach_commence(dev)    # TODO: select command based on return value of process
 
-        self.task_init_scheduled -= 1
-        self.log.debug("detachment task: init done")
+        self.task_detach_scheduled -= 1
+        self.log.debug("task: detach done")
 
-    async def detach_abort_task(self, dev, evt):
-        self.log.debug("detachment task: abort")
+    async def task_detach_abort(self, dev, evt):
+        self.log.debug("task: detach abort start")
 
         await asyncio.sleep(5)          # TODO: implement real process execution
 
         self.task_abort_scheduled -= 1
-        self.log.debug("detachment task: abort done")
+        self.log.debug("task: detach abort done")
+
+    async def task_attach(self, dev, evt):
+        self.log.debug("task: attach start")
+        await asyncio.sleep(cfg.CONNECT_DELAY)  # delay here to block other tasks
+
+        await asyncio.sleep(5)          # TODO: implement real process execution
+
+        self.task_attach_scheduled -= 1
+        self.log.debug("task: attach done")
 
 
 class TaskQueue:
