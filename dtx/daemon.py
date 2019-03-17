@@ -5,6 +5,7 @@ from . import config as cfg
 
 import asyncio
 import signal
+import logging
 
 
 def _get_op_mode_str(dev):
@@ -36,6 +37,7 @@ class EventHandler:
     def __init__(self):
         self.in_progress = False
         self.notif = None
+        self.log = logging.getLogger("handler")
 
     def __call__(self, dev, evt):
         if isinstance(evt, dtx.ConnectionChangeEvent):
@@ -62,24 +64,24 @@ class EventHandler:
             self.on_notify(dev, evt)
 
         else:
-            print('WARNING: unhandled event: {}'.format(evt))
+            self.log.warning('unhandled event: {}'.format(evt))
 
     def on_detach_initiate(self, dev, evt):
-        print("DEBUG: detachment process: initiating")
+        self.log.debug("detachment process: initiating")
         cmd.detach_commence(dev)
 
     def on_detach_abort(self, dev, evt):
-        print("DEBUG: detachment process: aborting")
+        self.log.debug("detachment process: aborting")
 
     def on_connect(self, dev, evt):
-        print("DEBUG: base connected")
+        self.log.debug("base connected")
 
     def on_connect_delayed(self, dev, evt):
-        print("DBEUG: device mode changed to '{}'".format(_get_op_mode_str(dev)))
+        self.log.debug("device mode changed to '{}'".format(_get_op_mode_str(dev)))
 
     def on_disconnect(self, dev, evt):
-        print("DEBUG: base disconnected")
-        print("DBEUG: device mode changed to '{}'".format(_get_op_mode_str(dev)))
+        self.log.debug("base disconnected")
+        self.log.debug("device mode changed to '{}'".format(_get_op_mode_str(dev)))
 
     def on_notify(self, dev, evt):
         if evt.show():
@@ -99,6 +101,8 @@ class EventHandler:
 
 
 def run():
+    logging.basicConfig(**cfg.LOG_CONFIG)
+
     handler = EventHandler()
     queue = asyncio.Queue()
 
@@ -110,7 +114,7 @@ def run():
             loop.add_signal_handler(signal.SIGINT, loop.stop)
             loop.run_forever()
         finally:
-            print("INFO: Shutting down...")
+            logging.info("Shutting down...")
 
             loop.remove_reader(dev.fd)
 
