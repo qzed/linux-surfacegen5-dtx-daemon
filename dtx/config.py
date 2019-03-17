@@ -1,6 +1,8 @@
 import logging
 import toml
 
+from pathlib import Path
+
 
 def _flatten_dict_tuples(d, base=()):
     for k, v in d.items():
@@ -25,6 +27,7 @@ class Config:
     DEFAULT_PATH = "/etc/surface-dtx/surface-dtx.cfg"
 
     def __init__(self):
+        self.path = Path(__file__).parent.parent / "etc"
         self.log = LogConfig()
         self.delay_connect = 5
         self.delay_attach = 5
@@ -35,6 +38,7 @@ class Config:
     @staticmethod
     def load(path=DEFAULT_PATH):
         cfg = Config()
+        cfg.path = Path(path).parent.resolve()
 
         data = _flatten_dict(toml.load(path))
 
