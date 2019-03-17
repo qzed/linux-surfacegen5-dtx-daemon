@@ -6,3 +6,5 @@ do
     dev=$(readlink -f $usb_dev)
     mount -l | grep -q "^$dev\s" && umount "$dev"
 done
+
+exit $EXIT_DETACH_COMMENCE

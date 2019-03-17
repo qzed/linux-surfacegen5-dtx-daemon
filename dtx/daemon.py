@@ -6,12 +6,44 @@ from . import notify
 import argparse
 import asyncio
 import logging
+import os
 import signal
+
+
+PROC_EXIT_DETACH_COMMENCE = 0
+PROC_EXIT_DETACH_ABORT    = 1
 
 
 async def _delayed(t, fn, *args):
     await asyncio.sleep(t)
     fn(*args)
+
+
+async def _run_handler(log, handler, cfg, env=None):
+    handler = cfg.path / handler
+
+    log.debug("subprocess start: {}".format(handler))
+
+    proc = await asyncio.create_subprocess_exec(
+        program=bytes(handler),
+        env=env,
+        cwd=cfg.path,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE)
+
+    stdout, stderr = await proc.communicate()
+
+    log.debug("subprocess terminated with exit-code {}".format(proc.returncode))
+
+    if stdout:
+        stdout = stdout.decode("utf-8")
+        log.info("subprocess terminated with stdout:\n{}".format(stdout))
+
+    if stderr:
+        stderr = stdout.decode("utf-8")
+        log.warning("subprocess terminated with stderr:\n{}".format(stderr))
+
+    return proc.returncode
 
 
 def _handle_read(dev, handler, queue):
@@ -108,10 +140,21 @@ class EventHandler:
     async def task_detach(self, dev, evt):
         self.log.debug("task: detach start")
 
-        await asyncio.sleep(5)          # TODO: implement real process execution
+        if self.cfg.handler_detach:
+            env = dict(os.environ)
+            env["EXIT_DETACH_COMMENCE"] = str(PROC_EXIT_DETACH_COMMENCE)
+            env["EXIT_DETACH_ABORT"] = str(PROC_EXIT_DETACH_ABORT)
 
-        if not self.task_abort_scheduled:
-            cmd.detach_commence(dev)    # TODO: select command based on return value of process
+            ret = await _run_handler(self.log, self.cfg.handler_detach, self.cfg, env=env)
+
+            if not self.task_abort_scheduled:
+                if ret == PROC_EXIT_DETACH_COMMENCE:
+                    cmd.detach_commence(dev)
+                else:
+                    cmd.detach_abort(dev)
+
+        elif not self.task_abort_scheduled:
+            cmd.detach_commence(dev)
 
         self.task_detach_scheduled -= 1
         self.log.debug("task: detach done")
@@ -119,7 +162,8 @@ class EventHandler:
     async def task_detach_abort(self, dev, evt):
         self.log.debug("task: detach abort start")
 
-        await asyncio.sleep(5)          # TODO: implement real process execution
+        if self.cfg.handler_detach_abort:
+            await _run_handler(self.log, self.cfg.handler_detach_abort, self.cfg)
 
         self.task_abort_scheduled -= 1
         self.log.debug("task: detach abort done")
@@ -128,7 +172,8 @@ class EventHandler:
         self.log.debug("task: attach start")
         await asyncio.sleep(self.cfg.delay_attach)  # delay here to block other tasks
 
-        await asyncio.sleep(5)          # TODO: implement real process execution
+        if self.cfg.handler_attach:
+            await _run_handler(self.log, self.cfg.handler_attach, self.cfg)
 
         self.task_attach_scheduled -= 1
         self.log.debug("task: attach done")
@@ -199,6 +244,3 @@ def run_app():
     args = parser.parse_args()
 
     run(config.Config.load(args.config))
-
-
-# TODO: error handling when detach task fails?
