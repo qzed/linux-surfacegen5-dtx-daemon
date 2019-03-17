@@ -8,21 +8,6 @@ import signal
 import logging
 
 
-def _get_op_mode_str(dev):
-    opmode = cmd.get_op_mode(dev)
-
-    if opmode == cmd.OP_MODE_LAPTOP:
-        return "Laptop"
-
-    if opmode == cmd.OP_MODE_TABLET:
-        return "Tablet"
-
-    if opmode == cmd.OP_MODE_SLATE:
-        return "Slate"
-
-    return "<unknown>"
-
-
 async def _delayed(t, fn, *args):
     await asyncio.sleep(t)
     fn(*args)
@@ -77,11 +62,11 @@ class EventHandler:
         self.log.debug("base connected")
 
     def on_connect_delayed(self, dev, evt):
-        self.log.debug("device mode changed to '{}'".format(_get_op_mode_str(dev)))
+        self.log.debug("device mode changed to '{}'".format(cmd.op_mode_str(cmd.get_op_mode(dev))))
 
     def on_disconnect(self, dev, evt):
         self.log.debug("base disconnected")
-        self.log.debug("device mode changed to '{}'".format(_get_op_mode_str(dev)))
+        self.log.debug("device mode changed to '{}'".format(cmd.op_mode_str(cmd.get_op_mode(dev))))
 
     def on_notify(self, dev, evt):
         if evt.show():

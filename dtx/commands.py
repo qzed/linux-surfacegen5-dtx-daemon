@@ -14,6 +14,13 @@ OP_MODE_LAPTOP = 0x01
 OP_MODE_SLATE  = 0x02
 
 
+def op_mode_str(mode):
+    try:
+        return ['Tablet', 'Laptop', 'Slate'][mode]
+    except IndexError:
+        return '<unknown>'
+
+
 def safeguard_engage(dev):
     dev.ioctl(CMD_SAFEGUARD_ENGAGE)
 
