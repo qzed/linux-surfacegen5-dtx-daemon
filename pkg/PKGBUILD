@@ -1,0 +1,37 @@
+# Maintainer: Maximilian Luz <luzmaximilian@gmail.com>
+
+pkgname=surface-dtx-daemon
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Surface Detachment System (DTX) Daemon"
+arch=('any')
+url="https://github.com/qzed/linux-surfacegen5-dtx-daemon"
+license=('MIT')
+depends=('python' 'python-toml' 'python-dbus')
+
+source=(
+    "https://github.com/qzed/linux-surfacegen5-dtx-daemon/archive/v${pkgver}.tar.gz"
+)
+sha256sums=(
+    'b0f52a8da1343c8c3b40d891de7edb7da44f0a44b2433a007861907e4e926721'
+)
+
+package() {
+    cd "linux-surfacegen5-dtx-daemon-${pkgver}"
+
+    # application files
+    install -Dm755 "surface-dtx-daemon" "${pkgdir}/opt/surface-dtx/surface-dtx-daemon"
+    install -d "${pkgdir}/opt/surface-dtx/dtx/"
+    cp -r "dtx/" "${pkgdir}/opt/surface-dtx/"
+
+    # config files
+    install -Dm644 "etc/surface-dtx.cfg" "${pkgdir}/etc/surface-dtx/surface-dtx.cfg"
+    install -Dm755 "etc/detach.sh" "${pkgdir}/etc/surface-dtx/detach.sh"
+    install -Dm755 "etc/attach.sh" "${pkgdir}/etc/surface-dtx/attach.sh"
+
+    # systemd unit file
+    install -Dm644 "systemd/surface-dtx.service" "${pkgdir}/usr/lib/systemd/system/surface-dtx.service"
+
+    # license
+    install -Dm644 "LICENSE" "${pkgdir}/usr/share/licenses/surface-dtx-daemon/LICENSE"
+}
