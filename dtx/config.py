@@ -33,9 +33,7 @@ class Config:
         self.handler_attach = None
 
     @staticmethod
-    def load(path=None):
-        path = path if path is not None else Config.DEFAULT_PATH
-
+    def load(path=DEFAULT_PATH):
         cfg = Config()
 
         data = _flatten_dict(toml.load(path))

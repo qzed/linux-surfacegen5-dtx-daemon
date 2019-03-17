@@ -169,10 +169,7 @@ def shutdown(dev, loop, queue):
     queue.soft_stop()
 
 
-def run():
-    # TODO: cli to select config file
-    cfg = config.Config.load("./etc/surface-dtx.cfg")
-
+def run(cfg):
     logging.basicConfig(level=cfg.log.level, format=cfg.log.format, datefmt=cfg.log.datemft)
     handler = EventHandler(cfg)
     queue = TaskQueue()
@@ -186,6 +183,22 @@ def run():
             loop.run_until_complete(queue.run())
         finally:
             loop.close()
+
+
+def run_app():
+    parser = argparse.ArgumentParser(
+        prog="surface-dtx-daemon",
+        description="Surface Detachment System (DTX) Daemon.")
+
+    parser.add_argument(
+        "-c", "--config",
+        default=config.Config.DEFAULT_PATH,
+        metavar="CFG",
+        help="the configuration file to use")
+
+    args = parser.parse_args()
+
+    run(config.Config.load(args.config))
 
 
 # TODO: error handling when detach task fails?

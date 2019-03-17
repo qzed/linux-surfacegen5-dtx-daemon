@@ -2,4 +2,4 @@
 from dtx import daemon
 
 if __name__ == '__main__':
-    daemon.run()
+    daemon.run_app()
