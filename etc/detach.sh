@@ -7,4 +7,5 @@ do
     mount -l | grep -q "^$dev\s" && umount "$dev"
 done
 
+# signal commence
 exit $EXIT_DETACH_COMMENCE
