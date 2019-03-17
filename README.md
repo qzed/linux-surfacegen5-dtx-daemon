@@ -12,4 +12,4 @@ At the moment this provides the following functionality:
 
 - Notifications indicating when the base can be detached.
 
-Run with `sudo ./surface-dtx-daemon`.
+For testing, run with `sudo ./surface-dtx-daemon -c ./etc/surface-dtx.cfg`.
