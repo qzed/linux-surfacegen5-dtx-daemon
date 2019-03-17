@@ -19,7 +19,7 @@ def _flatten_dict(d):
 class LogConfig:
     def __init__(self):
         self.level = "DEBUG"
-        self.format = "%(asctime)-15s %(name)-8s %(levelname)-8s %(message)s"
+        self.format = "%(name)-8s %(levelname)-8s %(message)s"
         self.datemft = "%Y-%m-%dT%H:%M:%S%z"
 
 
