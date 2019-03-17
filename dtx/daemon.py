@@ -1,29 +1,30 @@
 from . import dtx
 from . import notify
-from . import commands
+from . import commands as cmd
+from . import config as cfg
 
 import asyncio
 import signal
 
 
 def _get_op_mode_str(dev):
-    opmode = commands.get_op_mode(dev)
+    opmode = cmd.get_op_mode(dev)
 
-    if opmode == commands.OP_MODE_LAPTOP:
+    if opmode == cmd.OP_MODE_LAPTOP:
         return "Laptop"
 
-    if opmode == commands.OP_MODE_TABLET:
+    if opmode == cmd.OP_MODE_TABLET:
         return "Tablet"
 
-    if opmode == commands.OP_MODE_SLATE:
+    if opmode == cmd.OP_MODE_SLATE:
         return "Slate"
 
     return "<unknown>"
 
 
-async def _check_device_mode_delayed(dev):
-    await asyncio.sleep(5)
-    print("DBEUG: device mode changed to '{}'".format(_get_op_mode_str(dev)))
+async def _delayed(t, fn, *args):
+    await asyncio.sleep(t)
+    fn(*args)
 
 
 def _handle_read(dev, handler):
@@ -39,6 +40,7 @@ class EventHandler:
     def __call__(self, dev, evt):
         if isinstance(evt, dtx.ConnectionChangeEvent):
             if evt.state():
+                asyncio.create_task(_delayed(cfg.CONNECT_DELAY, self.on_connect_delayed, dev, evt))
                 self.on_connect(dev, evt)
             else:
                 self.in_progress = False
@@ -64,14 +66,16 @@ class EventHandler:
 
     def on_detach_initiate(self, dev, evt):
         print("DEBUG: detachment process: initiating")
-        commands.detach_commence(dev)
+        cmd.detach_commence(dev)
 
     def on_detach_abort(self, dev, evt):
         print("DEBUG: detachment process: aborting")
 
     def on_connect(self, dev, evt):
         print("DEBUG: base connected")
-        asyncio.create_task(_check_device_mode_delayed(dev))
+
+    def on_connect_delayed(self, dev, evt):
+        print("DBEUG: device mode changed to '{}'".format(_get_op_mode_str(dev)))
 
     def on_disconnect(self, dev, evt):
         print("DEBUG: base disconnected")
