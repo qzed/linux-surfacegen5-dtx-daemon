@@ -31,7 +31,7 @@ class EventHandler:
     def __call__(self, dev, evt, queue):
         if isinstance(evt, dtx.ConnectionChangeEvent):
             if evt.state():
-                conn_delayed = _delayed(cfg.CONNECT_DELAY, self.on_connect_delayed, dev, evt, queue)
+                conn_delayed = _delayed(cfg.DELAY_CONNECT, self.on_connect_delayed, dev, evt, queue)
                 asyncio.create_task(conn_delayed)
                 self.on_connect(dev, evt, queue)
             else:
@@ -124,7 +124,7 @@ class EventHandler:
 
     async def task_attach(self, dev, evt):
         self.log.debug("task: attach start")
-        await asyncio.sleep(cfg.CONNECT_DELAY)  # delay here to block other tasks
+        await asyncio.sleep(cfg.DELAY_ATTACH)   # delay here to block other tasks
 
         await asyncio.sleep(5)          # TODO: implement real process execution
 

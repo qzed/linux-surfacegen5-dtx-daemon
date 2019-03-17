@@ -4,4 +4,5 @@ LOG_CONFIG = {
     "datefmt": "%Y-%m-%dT%H:%M:%S%z",
 }
 
-CONNECT_DELAY = 5
+DELAY_CONNECT = 5
+DELAY_ATTACH = 5
