@@ -108,6 +108,8 @@ def run():
         finally:
             print("INFO: Shutting down...")
 
+            loop.remove_reader(dev.fd)
+
             for task in asyncio.all_tasks(loop):
                 task.cancel()
 
