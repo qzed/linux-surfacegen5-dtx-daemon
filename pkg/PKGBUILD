@@ -13,7 +13,7 @@ source=(
     "https://github.com/qzed/linux-surfacegen5-dtx-daemon/archive/v${pkgver}.tar.gz"
 )
 sha256sums=(
-    'b0f52a8da1343c8c3b40d891de7edb7da44f0a44b2433a007861907e4e926721'
+    '7cc8ddceedb00a0500e35dce6c76e824f74f9366fe18f8fb1ca8f3f9f054a90b'
 )
 
 package() {
