@@ -1,7 +1,7 @@
 from . import dtx
 from . import notify
 from . import commands as cmd
-from . import config as cfg
+from . import config
 
 import asyncio
 import signal
@@ -19,7 +19,8 @@ def _handle_read(dev, handler, queue):
 
 
 class EventHandler:
-    def __init__(self):
+    def __init__(self, cfg):
+        self.cfg = cfg
         self.log = logging.getLogger("handler")
         self.detach_in_progress = False
         self.task_detach_scheduled = 0
@@ -31,8 +32,8 @@ class EventHandler:
     def __call__(self, dev, evt, queue):
         if isinstance(evt, dtx.ConnectionChangeEvent):
             if evt.state():
-                conn_delayed = _delayed(cfg.DELAY_CONNECT, self.on_connect_delayed, dev, evt, queue)
-                asyncio.create_task(conn_delayed)
+                t = _delayed(self.cfg.delay_connect, self.on_connect_delayed, dev, evt, queue)
+                asyncio.create_task(t)
                 self.on_connect(dev, evt, queue)
             else:
                 self.detach_in_progress = False
@@ -124,7 +125,7 @@ class EventHandler:
 
     async def task_attach(self, dev, evt):
         self.log.debug("task: attach start")
-        await asyncio.sleep(cfg.DELAY_ATTACH)   # delay here to block other tasks
+        await asyncio.sleep(self.cfg.delay_attach)  # delay here to block other tasks
 
         await asyncio.sleep(5)          # TODO: implement real process execution
 
@@ -168,9 +169,11 @@ def shutdown(dev, loop, queue):
 
 
 def run():
-    logging.basicConfig(**cfg.LOG_CONFIG)
+    # TODO: cli to select config file
+    cfg = config.Config.load("./etc/surface-dtx.cfg")
 
-    handler = EventHandler()
+    logging.basicConfig(level=cfg.log.level, format=cfg.log.format, datefmt=cfg.log.datemft)
+    handler = EventHandler(cfg)
     queue = TaskQueue()
 
     with dtx.Device.open() as dev:
