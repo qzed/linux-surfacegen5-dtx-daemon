@@ -18,46 +18,35 @@ def _handle_read(dev, handler, queue):
         handler(dev, evt, queue)
 
 
-async def _detach_init_async(dev, evt):
-    logging.debug("detachment process: running init")
-    await asyncio.sleep(5)
-    logging.debug("detachment process: init done")
-    cmd.detach_commence(dev)
-
-
-async def _detach_abort_async(dev, evt):
-    logging.debug("detachment process: running abort")
-    await asyncio.sleep(5)
-    logging.debug("detachment process: abort done")
-
-
 class EventHandler:
     def __init__(self):
-        self.in_progress = False
-        self.notif = None
         self.log = logging.getLogger("handler")
+        self.detach_in_progress = False
+        self.task_init_scheduled = 0
+        self.task_abort_scheduled = 0
+        self.notif = None
 
     def __call__(self, dev, evt, queue):
         if isinstance(evt, dtx.ConnectionChangeEvent):
             if evt.state():
                 conn_delayed = _delayed(cfg.CONNECT_DELAY, self.on_connect_delayed, dev, evt, queue)
                 asyncio.create_task(conn_delayed)
-                self.on_connect(dev, evt)
+                self.on_connect(dev, evt, queue)
             else:
-                self.in_progress = False
+                self.detach_in_progress = False
                 self.on_disconnect(dev, evt, queue)
 
         elif isinstance(evt, dtx.DetachButtonEvent):
-            if self.in_progress:
+            if self.detach_in_progress:
                 self.on_detach_abort(dev, evt, queue)
-                self.in_progress = False
+                self.detach_in_progress = False
             else:
-                self.in_progress = True
-                self.on_detach_initiate(dev, evt, queue)
+                self.detach_in_progress = True
+                self.on_detach_init(dev, evt, queue)
 
         elif isinstance(evt, dtx.DetachTimeoutEvent):
             self.on_detach_abort(dev, evt, queue)
-            self.in_progress = False
+            self.detach_in_progress = False
 
         elif isinstance(evt, dtx.DetachNotificationEvent):
             self.on_notify(dev, evt, queue)
@@ -65,13 +54,15 @@ class EventHandler:
         else:
             self.log.warning('unhandled event: {}'.format(evt))
 
-    def on_detach_initiate(self, dev, evt, queue):
+    def on_detach_init(self, dev, evt, queue):
         self.log.debug("detachment process: initiating")
-        queue.put_nowait(_detach_init_async(dev, evt))
+        self.task_init_scheduled += 1
+        queue.put_nowait(self.detach_init_task(dev, evt))
 
     def on_detach_abort(self, dev, evt, queue):
         self.log.debug("detachment process: aborting")
-        queue.put_nowait(_detach_abort_async(dev, evt))
+        self.task_abort_scheduled += 1
+        queue.put_nowait(self.detach_abort_task(dev, evt))
 
     def on_connect(self, dev, evt, queue):
         self.log.debug("base connected")
@@ -98,6 +89,25 @@ class EventHandler:
 
         elif self.notif is not None:
             self.notif.close()
+
+    async def detach_init_task(self, dev, evt):
+        self.log.debug("detachment task: init")
+
+        await asyncio.sleep(5)          # TODO: implement real process execution
+
+        if not self.task_abort_scheduled:
+            cmd.detach_commence(dev)    # TODO: select command based on return value of process
+
+        self.task_init_scheduled -= 1
+        self.log.debug("detachment task: init done")
+
+    async def detach_abort_task(self, dev, evt):
+        self.log.debug("detachment task: abort")
+
+        await asyncio.sleep(5)          # TODO: implement real process execution
+
+        self.task_abort_scheduled -= 1
+        self.log.debug("detachment task: abort done")
 
 
 class TaskQueue:
