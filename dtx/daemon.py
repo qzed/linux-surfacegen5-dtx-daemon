@@ -13,9 +13,22 @@ async def _delayed(t, fn, *args):
     fn(*args)
 
 
-def _handle_read(dev, handler):
+def _handle_read(dev, handler, queue):
     for evt in dev.read():
-        handler(dev, evt)
+        handler(dev, evt, queue)
+
+
+async def _detach_init_async(dev, evt):
+    logging.debug("detachment process: running init")
+    await asyncio.sleep(5)
+    logging.debug("detachment process: init done")
+    cmd.detach_commence(dev)
+
+
+async def _detach_abort_async(dev, evt):
+    logging.debug("detachment process: running abort")
+    await asyncio.sleep(5)
+    logging.debug("detachment process: abort done")
 
 
 class EventHandler:
@@ -24,51 +37,53 @@ class EventHandler:
         self.notif = None
         self.log = logging.getLogger("handler")
 
-    def __call__(self, dev, evt):
+    def __call__(self, dev, evt, queue):
         if isinstance(evt, dtx.ConnectionChangeEvent):
             if evt.state():
-                asyncio.create_task(_delayed(cfg.CONNECT_DELAY, self.on_connect_delayed, dev, evt))
+                conn_delayed = _delayed(cfg.CONNECT_DELAY, self.on_connect_delayed, dev, evt, queue)
+                asyncio.create_task(conn_delayed)
                 self.on_connect(dev, evt)
             else:
                 self.in_progress = False
-                self.on_disconnect(dev, evt)
+                self.on_disconnect(dev, evt, queue)
 
         elif isinstance(evt, dtx.DetachButtonEvent):
             if self.in_progress:
-                self.on_detach_abort(dev, evt)
+                self.on_detach_abort(dev, evt, queue)
                 self.in_progress = False
             else:
                 self.in_progress = True
-                self.on_detach_initiate(dev, evt)
+                self.on_detach_initiate(dev, evt, queue)
 
         elif isinstance(evt, dtx.DetachTimeoutEvent):
-            self.on_detach_abort(dev, evt)
+            self.on_detach_abort(dev, evt, queue)
             self.in_progress = False
 
         elif isinstance(evt, dtx.DetachNotificationEvent):
-            self.on_notify(dev, evt)
+            self.on_notify(dev, evt, queue)
 
         else:
             self.log.warning('unhandled event: {}'.format(evt))
 
-    def on_detach_initiate(self, dev, evt):
+    def on_detach_initiate(self, dev, evt, queue):
         self.log.debug("detachment process: initiating")
-        cmd.detach_commence(dev)
+        queue.put_nowait(_detach_init_async(dev, evt))
 
-    def on_detach_abort(self, dev, evt):
+    def on_detach_abort(self, dev, evt, queue):
         self.log.debug("detachment process: aborting")
+        queue.put_nowait(_detach_abort_async(dev, evt))
 
-    def on_connect(self, dev, evt):
+    def on_connect(self, dev, evt, queue):
         self.log.debug("base connected")
 
-    def on_connect_delayed(self, dev, evt):
+    def on_connect_delayed(self, dev, evt, queue):
         self.log.debug("device mode changed to '{}'".format(cmd.op_mode_str(cmd.get_op_mode(dev))))
 
-    def on_disconnect(self, dev, evt):
+    def on_disconnect(self, dev, evt, queue):
         self.log.debug("base disconnected")
         self.log.debug("device mode changed to '{}'".format(cmd.op_mode_str(cmd.get_op_mode(dev))))
 
-    def on_notify(self, dev, evt):
+    def on_notify(self, dev, evt, queue):
         if evt.show():
             notif = notify.SystemNotification('Surface DTX')
             notif.summary = 'Surface DTX'
@@ -85,27 +100,56 @@ class EventHandler:
             self.notif.close()
 
 
+class TaskQueue:
+    def __init__(self):
+        self.queue = asyncio.Queue()
+        self.active = True
+
+    def put_nowait(self, task):
+        self.queue.put_nowait(task)
+
+    def empty(self):
+        self.queue.empty()
+
+    async def run(self):
+        while not self.queue.empty() or self.active:
+            task = await self.queue.get()
+            await task
+            self.queue.task_done()
+
+    def soft_stop(self):
+        self.active = False
+        self.queue.put_nowait(self._noop())
+
+    async def _noop(self):
+        pass
+
+
+def shutdown(dev, loop, queue):
+    logging.info("Shutting down...")
+
+    loop.remove_reader(dev.fd)
+    loop.remove_signal_handler(signal.SIGTERM)
+    loop.remove_signal_handler(signal.SIGINT)
+
+    queue.soft_stop()
+
+
 def run():
     logging.basicConfig(**cfg.LOG_CONFIG)
 
     handler = EventHandler()
-    queue = asyncio.Queue()
+    queue = TaskQueue()
 
     with dtx.Device.open() as dev:
         loop = asyncio.get_event_loop()
         try:
-            loop.add_reader(dev.fd, _handle_read, dev, handler)
-            loop.add_signal_handler(signal.SIGTERM, loop.stop)
-            loop.add_signal_handler(signal.SIGINT, loop.stop)
-            loop.run_forever()
+            loop.add_reader(dev.fd, _handle_read, dev, handler, queue)
+            loop.add_signal_handler(signal.SIGTERM, shutdown, dev, loop, queue)
+            loop.add_signal_handler(signal.SIGINT, shutdown, dev, loop, queue)
+            loop.run_until_complete(queue.run())
         finally:
-            logging.info("Shutting down...")
-
-            loop.remove_reader(dev.fd)
-
-            for task in asyncio.all_tasks(loop):
-                task.cancel()
-
-            loop.call_soon(loop.stop)
-            loop.run_forever()
             loop.close()
+
+
+# TODO: error handling when detach task fails?
