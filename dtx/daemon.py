@@ -2,7 +2,8 @@ from . import dtx
 from . import notify
 from . import commands
 
-import time
+import asyncio
+import signal
 
 
 def _get_op_mode_str(dev):
@@ -18,6 +19,16 @@ def _get_op_mode_str(dev):
         return "Slate"
 
     return "<unknown>"
+
+
+async def _check_device_mode_delayed(dev):
+    await asyncio.sleep(5)
+    print("DBEUG: device mode changed to '{}'".format(_get_op_mode_str(dev)))
+
+
+def _handle_read(dev, handler):
+    for evt in dev.read():
+        handler(dev, evt)
 
 
 class EventHandler:
@@ -60,8 +71,7 @@ class EventHandler:
 
     def on_connect(self, dev, evt):
         print("DEBUG: base connected")
-        time.sleep(5)
-        print("DBEUG: device mode changed to '{}'".format(_get_op_mode_str(dev)))
+        asyncio.create_task(_check_device_mode_delayed(dev))
 
     def on_disconnect(self, dev, evt):
         print("DEBUG: base disconnected")
@@ -86,7 +96,21 @@ class EventHandler:
 
 def run():
     handler = EventHandler()
+    queue = asyncio.Queue()
 
     with dtx.Device.open() as dev:
-        for evt in dev.read_loop():
-            handler(dev, evt)
+        loop = asyncio.get_event_loop()
+        try:
+            loop.add_reader(dev.fd, _handle_read, dev, handler)
+            loop.add_signal_handler(signal.SIGTERM, loop.stop)
+            loop.add_signal_handler(signal.SIGINT, loop.stop)
+            loop.run_forever()
+        finally:
+            print("INFO: Shutting down...")
+
+            for task in asyncio.all_tasks(loop):
+                task.cancel()
+
+            loop.call_soon(loop.stop)
+            loop.run_forever()
+            loop.close()
