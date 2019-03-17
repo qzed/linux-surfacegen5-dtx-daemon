@@ -1,8 +1,6 @@
 import fcntl
 import os
-import select
 import struct
-import subprocess
 
 
 class Event:
@@ -102,12 +100,6 @@ class Device:
 
         for event in struct.iter_unpack('BBBB', data):
             yield _dtx_event_from_bytes(*event)
-
-    def read_loop(self):
-        while True:
-            select.select([self.fd], [], [])
-            for event in self.read():
-                yield event
 
     def ioctl(self, request, arg=0):
         return fcntl.ioctl(self.fd, request, arg)
