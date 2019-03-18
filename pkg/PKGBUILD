@@ -16,6 +16,12 @@ sha256sums=(
     '7cc8ddceedb00a0500e35dce6c76e824f74f9366fe18f8fb1ca8f3f9f054a90b'
 )
 
+backup=(
+    'etc/surface-dtx/surface-dtx.cfg'
+    'etc/surface-dtx/detach.sh'
+    'etc/surface-dtx/attach.sh'
+)
+
 package() {
     cd "linux-surfacegen5-dtx-daemon-${pkgver}"
 
