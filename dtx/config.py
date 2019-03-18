@@ -60,9 +60,6 @@ class Config:
         if "handler.attach" in data:
             cfg.handler_attach = str(data["handler.attach"])
 
-        if "delay.connect" in data:
-            cfg.delay_connect = int(data["delay.connect"])
-
         if "delay.attach" in data:
             cfg.delay_attach = int(data["delay.attach"])
 

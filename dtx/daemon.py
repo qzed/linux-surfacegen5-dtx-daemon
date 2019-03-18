@@ -14,11 +14,6 @@ PROC_EXIT_DETACH_COMMENCE = 0
 PROC_EXIT_DETACH_ABORT    = 1
 
 
-async def _delayed(t, fn, *args):
-    await asyncio.sleep(t)
-    fn(*args)
-
-
 async def _run_handler(log, handler, cfg, env=None):
     handler = cfg.path / handler
 
@@ -65,12 +60,13 @@ class EventHandler:
     def __call__(self, dev, evt, queue):
         if isinstance(evt, dtx.ConnectionChangeEvent):
             if evt.state():
-                t = _delayed(self.cfg.delay_connect, self.on_connect_delayed, dev, evt, queue)
-                asyncio.create_task(t)
                 self.on_connect(dev, evt, queue)
             else:
                 self.detach_in_progress = False
                 self.on_disconnect(dev, evt, queue)
+
+        elif isinstance(evt, dtx.OpModeChangeEvent):
+            self.on_op_mode_change(dev, evt, queue)
 
         elif isinstance(evt, dtx.DetachButtonEvent):
             if self.detach_in_progress:
@@ -114,12 +110,11 @@ class EventHandler:
         self.task_attach_scheduled += 1
         queue.put_nowait(self.task_attach(dev, evt))
 
-    def on_connect_delayed(self, dev, evt, queue):
-        self.log.debug("device mode changed to '{}'".format(cmd.op_mode_str(cmd.get_op_mode(dev))))
-
     def on_disconnect(self, dev, evt, queue):
         self.log.debug("base disconnected")
-        self.log.debug("device mode changed to '{}'".format(cmd.op_mode_str(cmd.get_op_mode(dev))))
+
+    def on_op_mode_change(self, dev, evt, queue):
+        self.log.debug("device mode changed to '{}'".format(cmd.op_mode_str(evt.mode())))
 
     def on_notify(self, dev, evt, queue):
         if evt.show():

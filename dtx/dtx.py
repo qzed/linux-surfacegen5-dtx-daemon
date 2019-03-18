@@ -1,3 +1,5 @@
+from . import commands
+
 import fcntl
 import os
 import struct
@@ -30,6 +32,18 @@ class ConnectionChangeEvent(Event):
         return self.arg0 == 0x01
 
 
+class OpModeChangeEvent(Event):
+    def __init__(self, mode):
+        super().__init__(0x11, 0x0c, mode)
+
+    def __str__(self):
+        return "OpModeChangeEvent (mode: {})" \
+               .format(commands.op_mode_str(self.mode()))
+
+    def mode(self):
+        return self.arg0
+
+
 class DetachButtonEvent(Event):
     def __init__(self):
         super().__init__(0x11, 0x0e)
@@ -60,6 +74,9 @@ class DetachNotificationEvent(Event):
 def _dtx_event_from_bytes(type, code, arg0, arg1):
     if type == 0x11 and code == 0x0c:
         return ConnectionChangeEvent(arg0, arg1)
+
+    if type == 0x11 and code == 0x0d:
+        return OpModeChangeEvent(arg0)
 
     if type == 0x11 and code == 0x0e:
         return DetachButtonEvent()
