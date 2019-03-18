@@ -178,6 +178,15 @@ class EventHandler:
         self.task_attach_scheduled -= 1
         self.log.debug("task: attach done")
 
+        notif = notify.SystemNotification('Surface DTX')
+        notif.summary = 'Surface DTX'
+        notif.body = 'Clipboard attached.'
+        notif.hints['image-path'] = 'input-tablet'
+        notif.hints['category'] = 'device'
+        notif.hints['transient'] = True
+
+        notif.show()
+
 
 class TaskQueue:
     def __init__(self):
