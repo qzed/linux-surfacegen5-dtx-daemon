@@ -1,0 +1,6 @@
+post_install() {
+    echo ">>                                                       <<"
+    echo ">> Don't forget to start/enable the systemd service via  <<"
+    echo ">>         systemctl enable surface-dtx.service          <<"
+    echo ">>                                                       <<"
+}

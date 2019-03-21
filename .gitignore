@@ -1,5 +1,6 @@
 pkg/*
 !pkg/PKGBUILD
+!pkg/*.install
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
