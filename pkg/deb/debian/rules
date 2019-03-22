@@ -7,4 +7,5 @@ build:
 binary:
 	make install DESTDIR=debian/surface-dtx-daemon
 	dh_gencontrol
+	dh_installdeb
 	dh_builddeb
