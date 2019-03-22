@@ -14,7 +14,7 @@ source=(
     "https://github.com/qzed/linux-surfacegen5-dtx-daemon/archive/v${pkgver}.tar.gz"
 )
 sha256sums=(
-    '853c51da6636011058936fd6dbae720a578b9ec2f97699f8106314cdf3641084'
+    '11973beb15c9f9c9906f6164bc5601be55be3ebbab1307456695701c1280e389'
 )
 
 backup=(
