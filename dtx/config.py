@@ -61,6 +61,6 @@ class Config:
             cfg.handler_attach = str(data["handler.attach"])
 
         if "delay.attach" in data:
-            cfg.delay_attach = int(data["delay.attach"])
+            cfg.delay_attach = float(data["delay.attach"])
 
         return cfg
