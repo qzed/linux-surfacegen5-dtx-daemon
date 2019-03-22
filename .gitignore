@@ -1,6 +1,9 @@
-pkg/*
-!pkg/PKGBUILD
-!pkg/*.install
+pkg/arch/src/
+pkg/arch/pkg/
+pkg/arch/*.xz
+pkg/arch/*.gz
+
+pkg/deb/pkg/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

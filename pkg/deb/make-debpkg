@@ -1,0 +1,48 @@
+#!/usr/bin/env sh
+set -e
+
+pkgname="surface-dtx-daemon"
+pkgver="0.1.3"
+source="https://github.com/qzed/linux-surfacegen5-dtx-daemon/archive/v${pkgver}.tar.gz"
+
+
+pushd() {
+    command pushd "$@" > /dev/null
+}
+
+popd() {
+    command popd "$@" > /dev/null
+}
+
+
+package() {
+    mkdir -p "pkg"
+    pushd "pkg"
+
+    wget -nc -q --show-progress -O "src.tar.gz" "${source}" || true
+    tar xz -f "src.tar.gz" -C .
+
+    pushd "linux-surfacegen5-dtx-daemon-${pkgver}"
+
+    cp -r "../../debian" .
+
+    dpkg-buildpackage -b -d
+
+    popd
+    popd
+}
+
+clean() {
+    rm -rf "pkg"
+}
+
+
+main() {
+    if [[ "${1}" == "package" || "${1}" == "" ]]; then
+        package
+    elif [[ "${1}" == "clean" ]]; then
+        clean
+    fi
+}
+
+main $@

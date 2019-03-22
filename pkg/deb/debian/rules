@@ -1,0 +1,10 @@
+#!/usr/bin/make -f
+
+clean:
+
+build:
+
+binary:
+	make install DESTDIR=debian/surface-dtx-daemon
+	dh_gencontrol
+	dh_builddeb

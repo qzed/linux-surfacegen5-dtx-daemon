@@ -1,0 +1,5 @@
+surface-dtx-daemon (0.1.3-1) buster; urgency=medium
+
+  * Initial package.
+
+ -- Maximilian Luz <luzmaximilian@gmail.com>  Fri, 22 Mar 2019 12:14:32 +0100
