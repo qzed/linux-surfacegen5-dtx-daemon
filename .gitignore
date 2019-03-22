@@ -1,7 +1,6 @@
 pkg/arch/src/
 pkg/arch/pkg/
-pkg/arch/*.xz
-pkg/arch/*.gz
+pkg/arch/*.tar.*
 
 pkg/deb/pkg/
 
