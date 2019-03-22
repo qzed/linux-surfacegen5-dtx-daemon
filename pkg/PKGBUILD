@@ -27,7 +27,7 @@ package() {
     cd "linux-surfacegen5-dtx-daemon-${pkgver}"
 
     # basic installation
-    make install PREFIX="${pkgdir}"
+    make install DESTDIR="${pkgdir}"
 
     # license
     install -Dm644 "LICENSE" "${pkgdir}/usr/share/licenses/surface-dtx-daemon/LICENSE"
