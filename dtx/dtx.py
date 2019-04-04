@@ -38,7 +38,7 @@ class OpModeChangeEvent(Event):
 
     def __str__(self):
         return "OpModeChangeEvent (mode: {})" \
-               .format(commands.op_mode_str(self.mode()))
+               .format(commands.opmode_str(self.mode()))
 
     def mode(self):
         return self.arg0
@@ -52,23 +52,37 @@ class DetachButtonEvent(Event):
         return "DetachButtonEvent"
 
 
-class DetachTimeoutEvent(Event):
-    def __init__(self, arg0):
-        super().__init__(0x11, 0x0f, arg0)
+class DetachErrorEvent(Event):
+    def __init__(self, errnum):
+        super().__init__(0x11, 0x0f, errnum)
 
     def __str__(self):
-        return "DetachTimeoutEvent (arg0: {})".format(self.arg0)
+        return "DetachErrorEvent (code: {})".format(self.arg0)
+
+    def errnum(self):
+        return self.arg0
+
+    def err_timeout(self):
+        return self.errnum() == 0x02
+
+    # other currently unknown codes are (obtained from driver strings)
+    # - SSH_LATCHES_STATE_FAILED_TO_UNLOCK
+    # - SSH_LATCHES_STATE_FAILED_TO_REMAIN_UNLOCKED
+    # - SSH_LATCHES_STATE_FAILED_TO_RELOCK
 
 
-class DetachNotificationEvent(Event):
+class LatchStateChangeEvent(Event):
     def __init__(self, state):
         super().__init__(0x11, 0x11, state)
 
-    def show(self):
+    def __str__(self):
+        return "LatchStateChangeEvent (show: {})".format(self.show())
+
+    def latch_opened(self):
         return self.arg0 == 0x01
 
-    def __str__(self):
-        return "DetachNotificationEvent (show: {})".format(self.show())
+    def latch_closed(self):
+        return self.arg0 == 0x00
 
 
 def _dtx_event_from_bytes(type, code, arg0, arg1):
@@ -82,10 +96,10 @@ def _dtx_event_from_bytes(type, code, arg0, arg1):
         return DetachButtonEvent()
 
     if type == 0x11 and code == 0x0f:
-        return DetachTimeoutEvent(arg0)
+        return DetachErrorEvent(arg0)
 
     if type == 0x11 and code == 0x11:
-        return DetachNotificationEvent(arg0)
+        return LatchStateChangeEvent(arg0)
 
     return Event(type, code, arg0, arg1)
 

@@ -3,39 +3,39 @@ from . import ioctl
 import struct
 
 
-CMD_SAFEGUARD_ENGAGE    = ioctl.IO(0x11, 0x01)
-CMD_SAFEGUARD_DISENGAGE = ioctl.IO(0x11, 0x02)
-CMD_DETACH_ABORT        = ioctl.IO(0x11, 0x03)
-CMD_DETACH_COMMENCE     = ioctl.IO(0x11, 0x04)
-CMD_GET_OP_MODE         = ioctl.IOR(0x11, 0x05, 4)
+CMD_LATCH_LOCK    = ioctl.IO(0x11, 0x01)
+CMD_LATCH_UNLOCK  = ioctl.IO(0x11, 0x02)
+CMD_LATCH_REQUEST = ioctl.IO(0x11, 0x03)
+CMD_LATCH_OPEN    = ioctl.IO(0x11, 0x04)
+CMD_GET_OPMODE    = ioctl.IOR(0x11, 0x05, 4)
 
-OP_MODE_TABLET = 0x00
-OP_MODE_LAPTOP = 0x01
-OP_MODE_SLATE  = 0x02
+OPMODE_TABLET = 0x00
+OPMODE_LAPTOP = 0x01
+OPMODE_STUDIO = 0x02
 
 
-def op_mode_str(mode):
+def opmode_str(mode):
     try:
-        return ['Tablet', 'Laptop', 'Slate'][mode]
+        return ['Tablet', 'Laptop', 'Studio'][mode]
     except IndexError:
         return '<unknown>'
 
 
-def safeguard_engage(dev):
-    dev.ioctl(CMD_SAFEGUARD_ENGAGE)
+def latch_lock(dev):
+    dev.ioctl(CMD_LATCH_LOCK)
 
 
-def safeguard_disengage(dev):
-    dev.ioctl(CMD_SAFEGUARD_DISENGAGE)
+def latch_unlock(dev):
+    dev.ioctl(CMD_LATCH_UNLOCK)
 
 
-def detach_abort(dev):
-    dev.ioctl(CMD_DETACH_ABORT)
+def latch_request(dev):
+    dev.ioctl(CMD_LATCH_REQUEST)
 
 
-def detach_commence(dev):
-    dev.ioctl(CMD_DETACH_COMMENCE)
+def latch_open(dev):
+    dev.ioctl(CMD_LATCH_OPEN)
 
 
 def get_op_mode(dev):
-    return struct.unpack('i', dev.ioctl(CMD_GET_OP_MODE, bytes(4)))[0]
+    return struct.unpack('i', dev.ioctl(CMD_GET_OPMODE, bytes(4)))[0]

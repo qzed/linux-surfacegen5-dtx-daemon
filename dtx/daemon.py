@@ -76,12 +76,17 @@ class EventHandler:
                 self.detach_in_progress = True
                 self.on_detach_init(dev, evt, queue)
 
-        elif isinstance(evt, dtx.DetachTimeoutEvent):
-            self.on_detach_abort(dev, evt, queue)
-            self.detach_in_progress = False
+        elif isinstance(evt, dtx.DetachErrorEvent):
+            if evt.err_timeout():
+                self.log.warn('detachment process: timed out')
+                self.on_detach_abort(dev, evt, queue)
+                self.detach_in_progress = False
 
-        elif isinstance(evt, dtx.DetachNotificationEvent):
-            self.on_notify(dev, evt, queue)
+            else:
+                self.log.error('unhandled error event: {}'.format(evt))
+
+        elif isinstance(evt, dtx.LatchStateChangeEvent):
+            self.on_latch_state_change(dev, evt, queue)
 
         else:
             self.log.warning('unhandled event: {}'.format(evt))
@@ -89,7 +94,7 @@ class EventHandler:
     def on_detach_init(self, dev, evt, queue):
         if self.task_attach_scheduled:
             self.skip_next_abort = True
-            cmd.detach_abort(dev)
+            cmd.latch_request(dev)      # abort unlatch by sending request again
             return
 
         self.log.debug("detachment process: initiating")
@@ -113,11 +118,15 @@ class EventHandler:
     def on_disconnect(self, dev, evt, queue):
         self.log.debug("base disconnected")
 
-    def on_op_mode_change(self, dev, evt, queue):
-        self.log.debug("device mode changed to '{}'".format(cmd.op_mode_str(evt.mode())))
+        if self.notif is not None:
+            self.notif.close()
+            self.notif = None
 
-    def on_notify(self, dev, evt, queue):
-        if evt.show():
+    def on_op_mode_change(self, dev, evt, queue):
+        self.log.debug("device mode changed to '{}'".format(cmd.opmode_str(evt.mode())))
+
+    def on_latch_state_change(self, dev, evt, queue):
+        if evt.latch_opened():
             notif = notify.SystemNotification('Surface DTX')
             notif.summary = 'Surface DTX'
             notif.body = 'Clipboard can be detached.'
@@ -128,9 +137,6 @@ class EventHandler:
             notif.timeout = 0
 
             self.notif = notif.show()
-
-        elif self.notif is not None:
-            self.notif.close()
 
     async def task_detach(self, dev, evt):
         self.log.debug("task: detach start")
@@ -144,12 +150,12 @@ class EventHandler:
 
             if not self.task_abort_scheduled:
                 if ret == PROC_EXIT_DETACH_COMMENCE:
-                    cmd.detach_commence(dev)
+                    cmd.latch_open(dev)
                 else:
-                    cmd.detach_abort(dev)
+                    cmd.latch_request(dev)      # abort unlatch by sending request again
 
         elif not self.task_abort_scheduled:
-            cmd.detach_commence(dev)
+            cmd.latch_open(dev)
 
         self.task_detach_scheduled -= 1
         self.log.debug("task: detach done")
