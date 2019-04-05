@@ -1,7 +1,10 @@
 from . import commands as cmd
+from . import events
 from . import config
-from . import dtx
+from . import device
 from . import notify
+
+from .device import Device
 
 import argparse
 import asyncio
@@ -58,17 +61,17 @@ class EventHandler:
         self.notif = None
 
     def __call__(self, dev, evt, queue):
-        if isinstance(evt, dtx.ConnectionChangeEvent):
+        if isinstance(evt, events.ConnectionChangeEvent):
             if evt.state():
                 self.on_connect(dev, evt, queue)
             else:
                 self.detach_in_progress = False
                 self.on_disconnect(dev, evt, queue)
 
-        elif isinstance(evt, dtx.OpModeChangeEvent):
+        elif isinstance(evt, events.OpModeChangeEvent):
             self.on_op_mode_change(dev, evt, queue)
 
-        elif isinstance(evt, dtx.DetachButtonEvent):
+        elif isinstance(evt, events.DetachButtonEvent):
             if self.detach_in_progress:
                 self.on_detach_abort(dev, evt, queue)
                 self.detach_in_progress = False
@@ -76,7 +79,7 @@ class EventHandler:
                 self.detach_in_progress = True
                 self.on_detach_init(dev, evt, queue)
 
-        elif isinstance(evt, dtx.DetachErrorEvent):
+        elif isinstance(evt, events.DetachErrorEvent):
             if evt.err_timeout():
                 self.log.warn('detachment process: timed out')
                 self.on_detach_abort(dev, evt, queue)
@@ -85,7 +88,7 @@ class EventHandler:
             else:
                 self.log.error('unhandled error event: {}'.format(evt))
 
-        elif isinstance(evt, dtx.LatchStateChangeEvent):
+        elif isinstance(evt, events.LatchStateChangeEvent):
             self.on_latch_state_change(dev, evt, queue)
 
         else:
@@ -229,7 +232,7 @@ def run(cfg):
     handler = EventHandler(cfg)
     queue = TaskQueue()
 
-    with dtx.Device.open() as dev:
+    with Device.open() as dev:
         loop = asyncio.get_event_loop()
         try:
             loop.add_reader(dev.fd, _handle_read, dev, handler, queue)
