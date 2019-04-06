@@ -2,9 +2,9 @@ Source: surface-dtx-daemon
 Section: misc
 Priority: optional
 Maintainer: Maximilian Luz <luzmaximilian@gmail.com>
-Build-Depends: build-essential, debhelper (>= 9)
+Build-Depends: build-essential, debhelper (>= 9), pipenv, python-pex
 
 Package: surface-dtx-daemon
 Architecture: any
-Depends: python3 (>= 3.7), python-dbus, python-toml
+Depends: python3 (>= 3.7)
 Description: Surface Detachment System (DTX) Daemon

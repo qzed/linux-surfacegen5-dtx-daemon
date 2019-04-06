@@ -1,20 +1,21 @@
 # Maintainer: Maximilian Luz <luzmaximilian@gmail.com>
 
 pkgname=surface-dtx-daemon
-pkgver=0.1.3
+pkgver=0.1.4
 pkgrel=1
 pkgdesc="Surface Detachment System (DTX) Daemon"
 arch=('any')
 url="https://github.com/qzed/linux-surfacegen5-dtx-daemon"
 license=('MIT')
-depends=('python' 'python-toml' 'python-dbus')
+depends=('python')
+makedepends=('python-pipenv' 'python-pex')
 install=surface-dtx-daemon.install
 
 source=(
     "https://github.com/qzed/linux-surfacegen5-dtx-daemon/archive/v${pkgver}.tar.gz"
 )
 sha256sums=(
-    '11973beb15c9f9c9906f6164bc5601be55be3ebbab1307456695701c1280e389'
+    '24d878dd6a51ae3bceb362f174300c71523744b2ffe35c136ac1e47cf0fce967'
 )
 
 backup=(
