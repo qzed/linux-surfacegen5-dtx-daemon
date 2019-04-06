@@ -1,21 +1,34 @@
-.PHONY: run clean install uninstall-most uninstall
+.PHONY: all clean clean-all run run-pex install uninstall-most uninstall
 
+
+all: surface-dtx-daemon.pex
+
+surface-dtx-daemon.pex: $(wildcard dtx/*.py)
+	$(eval DEPS:=$(shell env PIPENV_VENV_IN_PROJECT=1 pipenv lock -r | grep -v '^-i'))
+	pex . ${DEPS} -e surface_dtx.daemon:run_app -o $@
+
+clean:
+	@rm -rf dtx/__pycache__
+	@rm -rf surface_dtx.egg-info
+
+clean-all: clean
+	@rm -rf .venv
+	@rm -f surface-dtx-daemon.pex
 
 run:
 	./surface-dtx-daemon -c ./etc/surface-dtx.cfg
 
-clean:
-	@rm -rf dtx/__pycache__
+run-pex:
+	$(eval DEPS:=$(shell env PIPENV_VENV_IN_PROJECT=1 pipenv lock -r | grep -v '^-i'))
+	pex . ${DEPS} -e surface_dtx.daemon:run_app -- -c ./etc/surface-dtx.cfg
 
-install:
-	@echo "Installing .py files to '${DESTDIR}/opt/surface-dtx/'."
+install: surface-dtx-daemon.pex
+	@echo "Installing app files to '${DESTDIR}/opt/surface-dtx/'."
 	@mkdir -p "${DESTDIR}/opt/surface-dtx/"
-	@cp -r dtx "${DESTDIR}/opt/surface-dtx/"
-	@cp "surface-dtx-daemon" "${DESTDIR}/opt/surface-dtx/"
+	@cp "surface-dtx-daemon.pex" "${DESTDIR}/opt/surface-dtx/surface-dtx-daemon"
 	@cp "LICENSE" "${DESTDIR}/opt/surface-dtx/"
 	@cp "README.md" "${DESTDIR}/opt/surface-dtx/"
 
-	@chmod 644 "${DESTDIR}/opt/surface-dtx/dtx/"*.py
 	@chmod 644 "${DESTDIR}/opt/surface-dtx/LICENSE"
 	@chmod 644 "${DESTDIR}/opt/surface-dtx/README.md"
 	@chmod 755 "${DESTDIR}/opt/surface-dtx/surface-dtx-daemon"

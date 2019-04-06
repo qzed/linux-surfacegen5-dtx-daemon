@@ -4,6 +4,8 @@ pkg/arch/*.tar.*
 
 pkg/deb/pkg/
 
+*.pex
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
