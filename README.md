@@ -1,9 +1,10 @@
 # Linux DTX Daemon for Surface Book 2
 
-Linux User-Space Detachment System (DTX) Daemon for the Surface ACPI Driver (and Surface Book 2).
+**DEPRECATED:**
+This project has been deprecated by https://github.com/qzed/linux-surface-dtx-daemon/.
+Development will continue there.
 
-_At the moment the daemon requires the [surface-acpi module](https://github.com/qzed/linux-surfacegen5-acpi/tree/master/module) to be installed and loaded, the patch version (as included in [jakeday/linux-surface](https://github.com/jakeday/linux-surface/)) has not been updated yet._
-_This will follow shortly._
+Linux User-Space Detachment System (DTX) Daemon for the Surface ACPI Driver (and Surface Book 2).
 
 ## What is this?
 
@@ -25,7 +26,7 @@ As this bypasses the package-manager, this way of installation is not recommende
 
 ## Configuration
 
-The main configuration files can be found under `/etc/surface-dtx/surface-dtx.conf`.
+The main configuration files can be found under `/etc/surface-dtx/surface-dtx.cfg`.
 Here you can specify the handler-scripts for supported events and other options.
 All options are explanined in this file, the configuration language is TOML.
 
